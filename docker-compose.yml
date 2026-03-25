@@ -1,0 +1,54 @@
+x-app-base: &app-base
+  build: .
+  depends_on:
+    redis:
+      condition: service_healthy
+
+  environment:
+    - RASTER_BASE_URL=${RASTER_BASE_URL}
+    - RASTER_AMBIENTE=${RASTER_AMBIENTE}
+    - RASTER_LOGIN=${RASTER_LOGIN}
+    - RASTER_SENHA=${RASTER_SENHA}
+    - RASTER_TIPO_RETORNO=${RASTER_TIPO_RETORNO}
+    - REDIS_HOST=${REDIS_HOST}
+
+  networks:
+    - rede-raster-services
+  restart: unless-stopped
+
+services:
+
+  api:
+    <<: *app-base 
+    container_name: raster-services-api
+    command: uvicorn main:app --host 0.0.0.0 --port 8000
+    ports:
+      - "8003:8000"
+
+  worker:
+    <<: *app-base 
+    container_name: raster-worker
+    command: arq worker.WorkerSettings
+
+  redis:
+    image: redis:7.2-alpine
+    container_name: redis-raster-services
+    restart: unless-stopped
+    volumes:
+      - redis-raster-services_data:/data
+    networks:
+      - rede-raster-services
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+volumes:
+  redis-raster-services_data:
+    driver: local
+
+networks:
+  rede-raster-services:
+    driver: bridge

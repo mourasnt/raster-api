@@ -1,0 +1,6 @@
+fastapi
+arq
+uvicorn
+pydantic
+pydantic_settings
+requests
