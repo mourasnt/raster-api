@@ -70,10 +70,85 @@ async def efetivar_sm_task(ctx, presm: dict):
     except Exception as e:
         logging.error(f"Worker (job_id: {job_id}): Ocorreu um erro inesperado durante efetivação: {e}", exc_info=True)
         return {"sucesso": False, "erro": f"Erro inesperado no worker durante efetivação: {str(e)}"}
+    
+async def cancelar_pre_sm_task(ctx, cod_pre_solicitacao: str):
+    job_id = ctx.get('job_id', 'unknown_job')
+    logging.info(f"Worker (job_id: {job_id}): Iniciando cancelamento da Pré-SM com código: {cod_pre_solicitacao}")
+    
+    try:
+        resultado = raster_api_client.cancelar_pre_sm(cod_pre_solicitacao)
+        logging.info(f"Worker (job_id: {job_id}): Pré-SM cancelada com sucesso! Resultado: {resultado}")
+        return {"sucesso": True, "resultado": resultado}
+    except HTTPException as e:
+        logging.error(f"Worker (job_id: {job_id}): Erro de negócio da API Raster durante cancelamento de Pré-SM: {e.detail}")
+        return {"sucesso": False, "erro": e.detail}
+    except Exception as e:
+        logging.error(f"Worker (job_id: {job_id}): Ocorreu um erro inesperado durante cancelamento de Pré-SM: {e}", exc_info=True)
+        return {"sucesso": False, "erro": f"Erro inesperado no worker durante cancelamento de Pré-SM: {str(e)}"}
+    
+async def cancelar_sm_task(ctx, cod_solicitacao: str):
+    job_id = ctx.get('job_id', 'unknown_job')
+    logging.info(f"Worker (job_id: {job_id}): Iniciando cancelamento da SM com código: {cod_solicitacao}")
+    
+    try:
+        resultado = raster_api_client.cancelar_sm(cod_solicitacao)
+        logging.info(f"Worker (job_id: {job_id}): SM cancelada com sucesso! Resultado: {resultado}")
+        return {"sucesso": True, "resultado": resultado}
+    except HTTPException as e:
+        logging.error(f"Worker (job_id: {job_id}): Erro de negócio da API Raster durante cancelamento de SM: {e.detail}")
+        return {"sucesso": False, "erro": e.detail}
+    except Exception as e:
+        logging.error(f"Worker (job_id: {job_id}): Ocorreu um erro inesperado durante cancelamento de SM: {e}", exc_info=True)
+        return {"sucesso": False, "erro": f"Erro inesperado no worker durante cancelamento de SM: {str(e)}"}
+    
+async def finalizar_sm_task(ctx, cod_solicitacao: str):
+    job_id = ctx.get('job_id', 'unknown_job')
+    logging.info(f"Worker (job_id: {job_id}): Iniciando finalização da SM com código: {cod_solicitacao}")
+    
+    try:
+        resultado = raster_api_client.finalizar_sm(cod_solicitacao)
+        logging.info(f"Worker (job_id: {job_id}): SM finalizada com sucesso! Resultado: {resultado}")
+        return {"sucesso": True, "resultado": resultado}
+    except HTTPException as e:
+        logging.error(f"Worker (job_id: {job_id}): Erro de negócio da API Raster durante finalização de SM: {e.detail}")
+        return {"sucesso": False, "erro": e.detail}
+    except Exception as e:
+        logging.error(f"Worker (job_id: {job_id}): Ocorreu um erro inesperado durante finalização de SM: {e}", exc_info=True)
+        return {"sucesso": False, "erro": f"Erro inesperado no worker durante finalização de SM: {str(e)}"}
+    
+async def refazer_pre_sm_task(ctx, cod_pre_solicitacao: str, payload: dict):
+    job_id = ctx.get('job_id', 'unknown_job')
+    logging.info(f"Worker (job_id: {job_id}): Iniciando refação da Pré-SM com código: {cod_pre_solicitacao}")
+    
+    try:
+        resultado = raster_api_client.refazer_pre_sm(cod_pre_solicitacao, payload)
+        logging.info(f"Worker (job_id: {job_id}): Pré-SM refeita com sucesso! Resultado: {resultado}")
+        return {"sucesso": True, "resultado": resultado}
+    except HTTPException as e:
+        logging.error(f"Worker (job_id: {job_id}): Erro de negócio da API Raster durante refação de Pré-SM: {e.detail}")
+        return {"sucesso": False, "erro": e.detail}
+    except Exception as e:
+        logging.error(f"Worker (job_id: {job_id}): Ocorreu um erro inesperado durante refação de Pré-SM: {e}", exc_info=True)
+        return {"sucesso": False, "erro": f"Erro inesperado no worker durante refação de Pré-SM: {str(e)}"}
+
+async def refazer_sm_task(ctx, cod_solicitacao: str, payload: dict):
+    job_id = ctx.get('job_id', 'unknown_job')
+    logging.info(f"Worker (job_id: {job_id}): Iniciando refação da SM com código: {cod_solicitacao}")
+    
+    try:
+        resultado = raster_api_client.refazer_sm(cod_solicitacao, payload)
+        logging.info(f"Worker (job_id: {job_id}): SM refeita com sucesso! Resultado: {resultado}")
+        return {"sucesso": True, "resultado": resultado}
+    except HTTPException as e:
+        logging.error(f"Worker (job_id: {job_id}): Erro de negócio da API Raster durante refação de SM: {e.detail}")
+        return {"sucesso": False, "erro": e.detail}
+    except Exception as e:
+        logging.error(f"Worker (job_id: {job_id}): Ocorreu um erro inesperado durante refação de SM: {e}", exc_info=True)
+        return {"sucesso": False, "erro": f"Erro inesperado no worker durante refação de SM: {str(e)}"}
 
 
 class WorkerSettings:
-    functions = [criar_pre_sm_task, efetivar_sm_task]
+    functions = [criar_pre_sm_task, efetivar_sm_task, cancelar_pre_sm_task, cancelar_sm_task, finalizar_sm_task, refazer_pre_sm_task, refazer_sm_task]
     redis_settings = RedisSettings(host=settings.REDIS_HOST, port=6379, database=0)
 
     # 3 tentativas significa que ele executará no total até 4 vezes (1 original + 3 retries).

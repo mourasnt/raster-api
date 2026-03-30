@@ -1,7 +1,7 @@
 import logging # Adicione esta importação
 from fastapi import FastAPI
 from arq import create_pool
-from routers import pre_sm_router
+from routers import sm_router
 from worker import WorkerSettings
 import uvicorn
 
@@ -9,7 +9,7 @@ import uvicorn
 app = FastAPI(
     title="API de Integração Raster",
     description="Orquestra chamadas para a API da Raster de forma assíncrona.",
-    version="2.0.0"
+    version="3.0.0"
 )
 
 @app.on_event("startup")
@@ -31,7 +31,7 @@ async def shutdown_event():
         await app.state.arq_pool.close()
         logging.info("Pool de conexões do ARQ fechado.")
 
-app.include_router(pre_sm_router.router, prefix="/pre-sm", tags=["Pré-SM"])
+app.include_router(sm_router.router, prefix="/sm", tags=["SM"])
 
 @app.get("/", tags=["Root"])
 def read_root():
