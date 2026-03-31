@@ -105,6 +105,8 @@ def cancelar_pre_sm(cod_pre_solicitacao):
         result = data.get("result", [{}])[0]
 
         if "MsgErro" in result and result["MsgErro"]:
+            if "Essa pre-solicitacao de monitoramento esta cancelada" in result["MsgErro"]:
+                return result
             raise HTTPException(status_code=400, detail=f"Erro retornado pela API da Raster: {result['MsgErro']}")
         
         return result
@@ -159,19 +161,6 @@ def finalizar_sm(cod_solicitacao):
         return result
     except requests.exceptions.RequestException as e:
         raise HTTPException(status_code=502, detail=f"Erro de comunicação com o serviço de finalização de SM: {e}")
-    
-def refazer_pre_sm(cod_pre_solicitacao, payload):
-    status_cancelar = cancelar_pre_sm(cod_pre_solicitacao)
-
-    if status_cancelar.get("Cancelou") != "SIM":
-        raise HTTPException(status_code=400, detail=f"Não foi possível cancelar a PreSM. Detalhes: {status_cancelar.get('MsgErro', 'Sem detalhes')}")
-
-    status_emissao_pre_sm = set_pre_sm(payload)
-
-    if status_emissao_pre_sm.get("CodPreSolicitacao") is None:
-        raise HTTPException(status_code=400, detail=f"Não foi possível emitir a nova PreSM. Detalhes: {status_emissao_pre_sm.get('MsgErro', 'Sem detalhes')}")
-
-    return status_emissao_pre_sm
 
 def refazer_sm(cod_solicitacao, motivo_cancelamento, payload):
     status_cancelar = cancelar_sm(cod_solicitacao, motivo_cancelamento)

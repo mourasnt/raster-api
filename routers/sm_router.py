@@ -3,8 +3,8 @@ from urllib import request
 from fastapi import APIRouter, Request, status, HTTPException
 from typing import Dict, Any, List
 from arq.jobs import Job
-from models.pre_sm_models import PreSMRequest
-from models.sm_model import SMRequest
+from models.pre_sm_models import PreSMRequest, RefazerPreSMRequest, CancelarPreSMRequest
+from models.sm_model import EfetivarSMRequest, CancelarSMRequest, FinalizarSMRequest, RefazerSMRequest
 
 router = APIRouter()
 
@@ -21,7 +21,6 @@ async def criar_pre_sm_em_lote_endpoint(
     jobs_criados = []
     for item in request_body:
         request_dict = item.dict()
-        print(  "Request Dict:", request_dict)  # Log para depuração
         request_data_dict = {"PreSM": request_dict["PreSM"]}
         id_3zx = request_dict["id"]
         job = await arq_pool.enqueue_job('criar_pre_sm_task', request_data_dict)
@@ -30,7 +29,7 @@ async def criar_pre_sm_em_lote_endpoint(
 
 @router.post("/efetivar", status_code=status.HTTP_202_ACCEPTED)
 async def efetivar_sm_endpoint(
-    request_body: List[SMRequest],
+    request_body: List[EfetivarSMRequest],
     request: Request
 ) -> List[Dict[str, Any]]:
     arq_pool = request.app.state.arq_pool
@@ -49,81 +48,81 @@ async def efetivar_sm_endpoint(
 
 @router.post("/cancelar-pre-sm", status_code=status.HTTP_202_ACCEPTED)
 async def cancelar_pre_sm_endpoint(
-    cod_pre_sm: str,
+    request_body: CancelarPreSMRequest,
     request: Request
 ) -> Dict[str, Any]:
     arq_pool = request.app.state.arq_pool
     
-    if not cod_pre_sm:
+    if not request_body.cod_pre_sm:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="O código da pré-solicitação é obrigatório.")
     
-    job = await arq_pool.enqueue_job('cancelar_pre_sm_task', cod_pre_sm)
+    job = await arq_pool.enqueue_job('cancelar_pre_sm_task', request_body.cod_pre_sm)
     return {"status": "accepted", "job_id": job.job_id, "type": "cancelar_pre_sm"}
 
 @router.post("/cancelar-sm", status_code=status.HTTP_202_ACCEPTED)
 async def cancelar_sm_endpoint(
-    cod_sm: str,
-    motivo: str,
+    request_body: CancelarSMRequest,
     request: Request
 ) -> Dict[str, Any]:
     arq_pool = request.app.state.arq_pool
     
-    if not cod_sm:
+    if not request_body.cod_sm:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="O código da solicitação é obrigatório.")
     
-    if not motivo:
+    if not request_body.motivo:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="O motivo do cancelamento é obrigatório.")
     
-    job_data = {"cod_sm": cod_sm, "motivo": motivo}
+    job_data = {"cod_sm": request_body.cod_sm, "motivo": request_body.motivo}
     job = await arq_pool.enqueue_job('cancelar_sm_task', job_data)
     return {"status": "accepted", "job_id": job.job_id, "type": "cancelar_sm"}
 
 @router.post("/finalizar-sm", status_code=status.HTTP_202_ACCEPTED)
 async def finalizar_sm_endpoint(
-    cod_sm: str,
+    request_body: FinalizarSMRequest,
     request: Request
 ) -> Dict[str, Any]:
     arq_pool = request.app.state.arq_pool
     
-    if not cod_sm:
+    if not request_body.cod_sm:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="O código da solicitação é obrigatório.")
     
-    job = await arq_pool.enqueue_job('finalizar_sm_task', cod_sm)
+    job = await arq_pool.enqueue_job('finalizar_sm_task', request_body.cod_sm)
     return {"status": "accepted", "job_id": job.job_id, "type": "finalizar_sm"}
 
 @router.post("/refazer-pre-sm", status_code=status.HTTP_202_ACCEPTED)
 async def refazer_pre_sm_endpoint(
-    cod_pre_sm: str,
-    payload: PreSMRequest,
+    request_body: RefazerPreSMRequest,
     request: Request
 ) -> Dict[str, Any]:
     arq_pool = request.app.state.arq_pool
     
-    if not cod_pre_sm:
+    if not request_body.cod_pre_sm:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="O código da pré-solicitação é obrigatório.")
     
-    if not payload:
+    if not request_body.payload:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="O payload para refazer a pré-solicitação é obrigatório.")
     
-    job_data = {"cod_pre_sm": cod_pre_sm, "payload": payload}
-    job = await arq_pool.enqueue_job('refazer_pre_sm_task', job_data)
-    return {"status": "accepted", "job_id": job.job_id, "type": "refazer_pre_sm"}
+    request_dict = request_body.payload.dict()
+    request_data_dict = {"PreSM": request_dict["PreSM"]}
+    id_3zx = request_dict["id"]  
+    job = await arq_pool.enqueue_job('refazer_pre_sm_task', request_body.cod_pre_sm, request_data_dict)
+    
+    return {"status": "accepted", "id": id_3zx ,"job_id": job.job_id, "type": "criar_pre_sm"}
 
 @router.post("/refazer-sm", status_code=status.HTTP_202_ACCEPTED)
 async def refazer_sm(
-    cod_sm: str,
-    payload: PreSMRequest,
+    request_body: RefazerSMRequest,
     request: Request
 ) -> Dict[str, Any]:
     arq_pool = request.app.state.arq_pool
     
-    if not cod_sm:
+    if not request_body.cod_sm:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="O código da solicitação é obrigatório.")
     
-    if not payload:
+    if not request_body.payload:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="O payload para refazer a solicitação é obrigatório.")
     
-    job_data = {"cod_sm": cod_sm, "payload": payload}
+    job_data = {"cod_sm": request_body.cod_sm, "payload": request_body.payload}
     job = await arq_pool.enqueue_job('refazer_sm_task', job_data)
     return {"status": "accepted", "job_id": job.job_id, "type": "refazer_sm"}
 

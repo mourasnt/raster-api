@@ -59,3 +59,13 @@ class PreSMRequest(BaseModel):
     """ Modelo principal que a API espera receber no corpo da requisição. """
     id: str
     PreSM: PreSMBody
+
+class CodPreSMRequest(BaseModel):
+    cod_pre_sm: str
+
+class CancelarPreSMRequest(BaseModel):
+    cod_pre_sm: str
+
+class RefazerPreSMRequest(BaseModel):
+    cod_pre_sm: str
+    payload: PreSMRequest

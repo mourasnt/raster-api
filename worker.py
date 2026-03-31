@@ -121,9 +121,11 @@ async def refazer_pre_sm_task(ctx, cod_pre_solicitacao: str, payload: dict):
     logging.info(f"Worker (job_id: {job_id}): Iniciando refação da Pré-SM com código: {cod_pre_solicitacao}")
     
     try:
-        resultado = raster_api_client.refazer_pre_sm(cod_pre_solicitacao, payload)
-        logging.info(f"Worker (job_id: {job_id}): Pré-SM refeita com sucesso! Resultado: {resultado}")
-        return {"sucesso": True, "resultado": resultado}
+        resultado_cancelamento = raster_api_client.cancelar_pre_sm(cod_pre_solicitacao)
+        logging.info(f"Worker (job_id: {job_id}): Pré-SM cancelada com sucesso! Resultado: {resultado_cancelamento}")
+        reultado_criacao_pre_sm = raster_api_client.set_pre_sm(payload)
+        logging.info(f"Worker (job_id: {job_id}): Pré-SM refeita com sucesso! Resultado: {reultado_criacao_pre_sm}")
+        return {"sucesso": True, "resultado": reultado_criacao_pre_sm}
     except HTTPException as e:
         logging.error(f"Worker (job_id: {job_id}): Erro de negócio da API Raster durante refação de Pré-SM: {e.detail}")
         return {"sucesso": False, "erro": e.detail}
