@@ -162,9 +162,24 @@ async def status_viagem_task(ctx, cod_presm: str):
     except Exception as e:
         logging.error(f"Worker (job_id: {job_id}): Ocorreu um erro inesperado durante consulta de status de viagem: {e}", exc_info=True)
         return {"sucesso": False, "erro": f"Erro inesperado no worker durante consulta de status de viagem: {str(e)}"}
+    
+async def status_presm_task(ctx, cod_presm: str):
+    job_id = ctx.get('job_id', 'unknown_job')
+    logging.info(f"Worker (job_id: {job_id}): Iniciando consulta de status para Pré-SM: {cod_presm}")
+    
+    try:
+        resultado = raster_api_client.status_presm(cod_presm)
+        logging.info(f"Worker (job_id: {job_id}): Consulta de status de Pré-SM realizada com sucesso! Resultado: {resultado}")
+        return {"sucesso": True, "resultado": resultado}
+    except HTTPException as e:
+        logging.error(f"Worker (job_id: {job_id}): Erro de negócio da API Raster durante consulta de status de Pré-SM: {e.detail}")
+        return {"sucesso": False, "erro": e.detail}
+    except Exception as e:
+        logging.error(f"Worker (job_id: {job_id}): Ocorreu um erro inesperado durante consulta de status de Pré-SM: {e}", exc_info=True)
+        return {"sucesso": False, "erro": f"Erro inesperado no worker durante consulta de status de Pré-SM: {str(e)}"}
 
 class WorkerSettings:
-    functions = [criar_pre_sm_task, efetivar_sm_task, cancelar_pre_sm_task, cancelar_sm_task, finalizar_sm_task, refazer_pre_sm_task, refazer_sm_task]
+    functions = [criar_pre_sm_task, efetivar_sm_task, cancelar_pre_sm_task, cancelar_sm_task, finalizar_sm_task, refazer_pre_sm_task, refazer_sm_task, status_viagem_task, status_presm_task]
     redis_settings = RedisSettings(host=settings.REDIS_HOST, port=6379, database=0)
 
     # 3 tentativas significa que ele executará no total até 4 vezes (1 original + 3 retries).

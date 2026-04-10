@@ -203,3 +203,27 @@ def status_viagem(cod_presm):
         return result
     except requests.exceptions.RequestException as e:
         raise HTTPException(status_code=502, detail=f"Erro de comunicação com o serviço de status de viagem: {e}")
+    
+def status_presm(cod_presm):
+    """Faz a chamada para o endpoint 'statusPresm' da API Raster."""
+    url = f'{settings.RASTER_BASE_URL}/%22getStatusPreSM%22/'
+    payload = {
+        "Ambiente": settings.RASTER_AMBIENTE,
+        "Login": settings.RASTER_LOGIN,
+        "Senha": settings.RASTER_SENHA,
+        "TipoRetorno": settings.RASTER_TIPO_RETORNO,
+        "CodPreSolicitacao": cod_presm
+    }
+
+    try:
+        response = requests.post(url, json=payload, timeout=60)
+        response.raise_for_status()
+        data = response.json()
+        result = data.get("result", [{}])[0]
+
+        if "MsgErro" in result and result["MsgErro"]:
+            raise HTTPException(status_code=400, detail=f"Erro retornado pela API da Raster: {result['MsgErro']}")
+        
+        return result
+    except requests.exceptions.RequestException as e:
+        raise HTTPException(status_code=502, detail=f"Erro de comunicação com o serviço de status de PreSM: {e}")

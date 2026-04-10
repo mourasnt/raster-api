@@ -140,6 +140,19 @@ async def status_viagem_endpoint(
     job = await arq_pool.enqueue_job('status_viagem_task', request_body.cod_presm)
     return {"status": "accepted", "job_id": job.job_id, "type": "status_viagem"}
 
+@router.post("/statusPresm", status_code=status.HTTP_202_ACCEPTED)
+async def status_presm_endpoint(
+    request_body: StatusViagemRequest,
+    request: Request
+) -> Dict[str, Any]:
+    arq_pool = request.app.state.arq_pool
+
+    if not request_body.cod_presm:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="O código da pré-solicitação é obrigatório.")
+
+    job = await arq_pool.enqueue_job('status_presm_task', request_body.cod_presm)
+    return {"status": "accepted", "job_id": job.job_id, "type": "status_presm"}
+
 @router.get("/status/{job_id}", response_model=Dict[str, Any])
 async def get_job_status(job_id: str, request: Request) -> Dict[str, Any]:
     """
