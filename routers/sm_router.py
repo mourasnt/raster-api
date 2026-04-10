@@ -4,6 +4,7 @@ from fastapi import APIRouter, Request, status, HTTPException
 from typing import Dict, Any, List
 from arq.jobs import Job
 from models.pre_sm_models import PreSMRequest, RefazerPreSMRequest, CancelarPreSMRequest
+from models.viagem_models import StatusViagemRequest
 from models.sm_model import EfetivarSMRequest, CancelarSMRequest, FinalizarSMRequest, RefazerSMRequest
 
 router = APIRouter()
@@ -125,6 +126,19 @@ async def refazer_sm(
     job_data = {"cod_sm": request_body.cod_sm, "payload": request_body.payload}
     job = await arq_pool.enqueue_job('refazer_sm_task', job_data)
     return {"status": "accepted", "job_id": job.job_id, "type": "refazer_sm"}
+
+@router.post("/statusViagem", status_code=status.HTTP_202_ACCEPTED)
+async def status_viagem_endpoint(
+    request_body: StatusViagemRequest,
+    request: Request
+) -> Dict[str, Any]:
+    arq_pool = request.app.state.arq_pool
+
+    if not request_body.cod_presm:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="O código da pré-solicitação é obrigatório.")
+
+    job = await arq_pool.enqueue_job('status_viagem_task', request_body.cod_presm)
+    return {"status": "accepted", "job_id": job.job_id, "type": "status_viagem"}
 
 @router.get("/status/{job_id}", response_model=Dict[str, Any])
 async def get_job_status(job_id: str, request: Request) -> Dict[str, Any]:

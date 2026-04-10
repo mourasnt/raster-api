@@ -148,6 +148,20 @@ async def refazer_sm_task(ctx, cod_solicitacao: str, payload: dict):
         logging.error(f"Worker (job_id: {job_id}): Ocorreu um erro inesperado durante refação de SM: {e}", exc_info=True)
         return {"sucesso": False, "erro": f"Erro inesperado no worker durante refação de SM: {str(e)}"}
 
+async def status_viagem_task(ctx, cod_presm: str):
+    job_id = ctx.get('job_id', 'unknown_job')
+    logging.info(f"Worker (job_id: {job_id}): Iniciando consulta de status de viagem para Pré-SM: {cod_presm}")
+    
+    try:
+        resultado = raster_api_client.status_viagem(cod_presm)
+        logging.info(f"Worker (job_id: {job_id}): Consulta de status de viagem realizada com sucesso! Resultado: {resultado}")
+        return {"sucesso": True, "resultado": resultado}
+    except HTTPException as e:
+        logging.error(f"Worker (job_id: {job_id}): Erro de negócio da API Raster durante consulta de status de viagem: {e.detail}")
+        return {"sucesso": False, "erro": e.detail}
+    except Exception as e:
+        logging.error(f"Worker (job_id: {job_id}): Ocorreu um erro inesperado durante consulta de status de viagem: {e}", exc_info=True)
+        return {"sucesso": False, "erro": f"Erro inesperado no worker durante consulta de status de viagem: {str(e)}"}
 
 class WorkerSettings:
     functions = [criar_pre_sm_task, efetivar_sm_task, cancelar_pre_sm_task, cancelar_sm_task, finalizar_sm_task, refazer_pre_sm_task, refazer_sm_task]
